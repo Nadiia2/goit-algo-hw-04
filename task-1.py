@@ -1,32 +1,79 @@
-import os
-import shutil
-import argparse
+import timeit
+import random
 
-def copy_files(source_dir, destination_dir):
-    for root, dirs, files in os.walk(source_dir):
-        for file in files:
-            source_file_path = os.path.join(root, file)
-            _, extension = os.path.splitext(file)
-            destination_subdir = os.path.join(destination_dir, extension[1:])
-            os.makedirs(destination_subdir, exist_ok=True)
-            shutil.copy(source_file_path, destination_subdir)
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+
+    mid = len(arr) // 2
+    left_half = arr[:mid]
+    right_half = arr[mid:]
+
+    return merge(merge_sort(left_half), merge_sort(right_half))
+
+def merge(left, right):
+    merged = []
+    left_index = 0
+    right_index = 0
+
+    while left_index < len(left) and right_index < len(right):
+        if left[left_index] <= right[right_index]:
+            merged.append(left[left_index])
+            left_index += 1
+        else:
+            merged.append(right[right_index])
+            right_index += 1
+
+    while left_index < len(left):
+        merged.append(left[left_index])
+        left_index += 1
+
+    while right_index < len(right):
+        merged.append(right[right_index])
+        right_index += 1
+
+    return merged
+
+def insertion_sort(lst):
+    for i in range(1, len(lst)):
+        key = lst[i]
+        j = i-1
+        while j >= 0 and key < lst[j]:
+            lst[j + 1] = lst[j]
+            j -= 1
+        lst[j + 1] = key
+
+def tim_sort(arr):
+    arr.sort()
 
 def main():
-    parser = argparse.ArgumentParser(description="Copy and sort files by extension.")
-    parser.add_argument("source_dir", help="Path to the source directory.")
-    parser.add_argument("destination_dir", nargs="?", default="dist", help="Path to the destination directory. Default is 'dist'.")
-    args = parser.parse_args()
+    results = []
+    sizes = [1000, 10000, 100000]
 
+    for size in sizes:
+        data = [random.randint(0, 1000) for _ in range(size)]
+        
+        merge_time = timeit.timeit(
+            stmt='merge_sort(data)',
+            setup=f'data = {data}; from __main__ import merge_sort',
+            number=1
+        )
+        insertion_time = timeit.timeit(
+            stmt='insertion_sort(data)',
+            setup=f'data = {data}; from __main__ import insertion_sort',
+            number=1
+        )
+        tim_sort_time = timeit.timeit(
+            stmt='tim_sort(data)',
+            setup=f'data = {data}; from __main__ import tim_sort',
+            number=1
+        )
 
-    if not os.path.exists(args.source_dir):
-        print("Source directory does not exist.")
-        return
+        results.append((size, merge_time, insertion_time, tim_sort_time))
 
-    try:
-        copy_files(args.source_dir, args.destination_dir)
-        print("Files copied and sorted successfully.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    print("Size\tMerge Sort\tInsertion Sort\tTimsort")
+    for size, merge_time, insertion_time, tim_sort_time in results:
+        print(f"{size}\t{merge_time:.6f}\t{insertion_time:.6f}\t{tim_sort_time:.6f}")
 
 if __name__ == "__main__":
     main()
